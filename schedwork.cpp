@@ -21,8 +21,9 @@ static const Worker_T INVALID_ID = (unsigned int)-1;
 
 
 // Add prototypes for any helper functions here
-bool scheduleHelper(DailySchedule& sched, const AvailabilityMatrix& avail, const size_t dailyNeed, const size_t maxShifts, unsigned int row, unsigned int col, std::vector<int>& worker_shifts);
-bool notAlreadyScheduled(const DailySchedule& sched, Worker_T id, unsigned int row);
+bool scheduleHelper(DailySchedule& sched, const AvailabilityMatrix& avail, const size_t dailyNeed, const size_t maxShifts, unsigned int row, unsigned int col, std::vector<unsigned int>& worker_shifts);
+bool notAlreadyScheduled(const DailySchedule& sched, Worker_T id, unsigned int row, unsigned int col);
+void populateworker_shifts(vector<unsigned int>& worker_shifts, unsigned int numworkers);
 
 // Add your implementation of schedule() and other helper functions here
 
@@ -51,9 +52,8 @@ bool schedule(
 
     //initializes vector to track how many shifts 
     //each worker has
-    vector<int> worker_shifts;
-    for(size_t i=0; i<avail[i].size(); i++)
-        worker_shifts.push_back(0);
+    vector<unsigned int> worker_shifts;
+    populateworker_shifts(worker_shifts, avail[0].size());
 
     return scheduleHelper(sched, avail, dailyNeed, maxShifts, 0, 0, worker_shifts);
 }
@@ -64,7 +64,7 @@ bool scheduleHelper(DailySchedule& sched,
                     const size_t m, 
                     unsigned int row, 
                     unsigned int col, 
-                    std::vector<int>& worker_shifts)
+                    std::vector<unsigned int>& worker_shifts)
 {
     //if schedule is complete
     if (row == sched.size() - 1 && col == d)
@@ -81,7 +81,7 @@ bool scheduleHelper(DailySchedule& sched,
     for(size_t i=0; i<avail[row].size(); i++)
     {
         //cout << "Row: " << row << "  Col: " << col << endl;
-        if(avail[row][i] == 1 && notAlreadyScheduled(sched, i, row) && worker_shifts[i] < m)
+        if(avail[row][i] == 1 && notAlreadyScheduled(sched, i, row, 0) && worker_shifts[i] < m)
         {
             //cout << "Adding " << i << endl;
             worker_shifts[i]++;
@@ -98,12 +98,22 @@ bool scheduleHelper(DailySchedule& sched,
 	return false;
 }
 
-bool notAlreadyScheduled(const DailySchedule& sched, Worker_T id, unsigned int row)
+bool notAlreadyScheduled(const DailySchedule& sched, Worker_T id, unsigned int row, unsigned int col)
 {
-    for(unsigned int i=0; i<sched[row].size(); i++)
-    {
-        if(sched[row][i] == id)
-            return false;
-    }
-    return true;
+    if(col == sched[row].size())
+        return true;
+
+    if(sched[row][col] == id)
+        return false;
+
+    return notAlreadyScheduled(sched, id, row, col+1);
+}
+
+void populateworker_shifts(vector<unsigned int>& worker_shifts, unsigned int numworkers)
+{
+    if(worker_shifts.size() == numworkers)
+        return;
+    
+    worker_shifts.push_back(0);
+    populateworker_shifts(worker_shifts, numworkers);
 }
